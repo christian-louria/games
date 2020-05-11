@@ -1,7 +1,7 @@
 var cache = require('memory-cache');
 const UnoGame = require("../../model/UnoGame")
 
-function startGame (socket, io, data) {
+function sortCards (socket, io, data) {
     let newData = {"data":"info"}
     let gameName = data['gameName']
     let initializer = cache.get("initializer")
@@ -9,7 +9,7 @@ function startGame (socket, io, data) {
     let updatedGame = new UnoGame(unoGames[gameName])
 
 
-    updatedGame.startGame(data['stackTwos'], data['winOnWild'])
+    updatedGame.sortUnoCards(data)
 
 
     newData['game'] = updatedGame;
@@ -21,4 +21,4 @@ function startGame (socket, io, data) {
 
 }
 
-module.exports = startGame
+module.exports = sortCards

@@ -80,7 +80,7 @@ class UnoDeck {
             new UnoCard(9, "G", deckNumber, 2),
             new UnoCard(9, "B", deckNumber, 2),
             new UnoCard("O", "R", deckNumber, 1),
-            new UnoCard("o", "Y", deckNumber, 1),
+            new UnoCard("O", "Y", deckNumber, 1),
             new UnoCard("O", "G", deckNumber, 1),
             new UnoCard("O", "B", deckNumber, 1),
             new UnoCard("O", "R", deckNumber, 2),

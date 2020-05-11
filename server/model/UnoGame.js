@@ -11,10 +11,11 @@ class UnoGame {
             this.players = []
             this.gameView = 0
             this.turnNumber = null
+            this.stackTwos = null;
+            this.winOnWild = null;
 
             // Your turn!!
             //
-            //sort Hand
             //Add win on wild and checks for it  nad stack
 
             this.youGotUnoed = false
@@ -29,6 +30,8 @@ class UnoGame {
             this.deck = new UnoDeck(0)
             this.topCard = null
         } else {
+            this.stackTwos = obj.stackTwos;
+            this.winOnWild = obj.winOnWild;
             this.name = obj.name
             this.gameView = obj.gameView
             this.host = obj.host
@@ -39,7 +42,7 @@ class UnoGame {
             this.youGotUnoed = obj.youGotUnoed
             this.gotUnoed = obj.gotUnoed
             this.winner = obj.winner;
-            this.pickingColor = obj.pickColor;
+            this.pickingColor = obj.pickingColor;
             this.forceDraw = obj.forceDraw;
             this.forcing = obj.forcing;
             this.turnNumber = obj.turnNumber
@@ -49,6 +52,36 @@ class UnoGame {
             this.topCard = obj.topCard
         }
     };
+
+    sortUnoCards(data) {
+        let playerName = data['playerName'];
+
+        let playerHand;
+        let player;
+        let newHand = []
+        for (let i = 0; i < this.players.length; i++){
+            if (this.players[i]['name'] === playerName) {
+                player = this.players[i]
+                playerHand = this.players[i]['hand'];
+            }
+        }
+
+        newHand.push(playerHand[0])
+        for (let i = 1; i < playerHand.length; i++) {
+            for (let j = 0; j < newHand.length; j++){
+                if (this.compareCards(playerHand[i], newHand[j]) <= 0 ) {
+                    newHand.splice(j, 0, playerHand[i])
+                    break;
+                } else if (j === newHand.length - 1) {
+                    newHand.push(playerHand[i])
+                    break;
+                }
+            }
+
+        }
+        player['hand'] = newHand
+    }
+
 
 
     attackUnoCall() {
@@ -78,7 +111,6 @@ class UnoGame {
             }
         }
         if (player['hand'].length === 1) {
-            console.log("Blocked")
             player['calledUno'] = true
         }
 
@@ -113,8 +145,6 @@ class UnoGame {
             this.forcing = true;
         }
 
-
-
         player.addCard(this.deck.draw());
         if (this.deck['deck'].length === 0) {
             this.reshuffle()
@@ -131,9 +161,56 @@ class UnoGame {
         }
     }
 
+    compareCards(card, compare) {
+        if (card['color'] === compare['color']) {
+            if (!isNaN(parseInt(card['number'])) && !isNaN(parseInt(compare['number']))){
+                return card['number'] - compare['number']
+            }
+            if (card['number'] === compare['number']) {
+                return 0
+            }
+            if (isNaN(parseInt(card['number']) && !isNaN(parseInt(compare['number'])))) {
+                return 1
+            }
+            if (card['number'] === "O") {
+                return -1
+            } else if (compare['number'] === "O") {
+                return 1
+            } else if (card['number'] === "R") {
+                return -1
+            } else if (compare['number'] === "R") {
+                return 1
+            } else if (card['number'] === "+") {
+                return -1
+            } else if (compare['number'] === "+") {
+                return 1
+            }
+
+
+        }
+        if (card['color'] === 'R') {
+            return -1
+        } else if (compare['color'] === 'R') {
+            return 1
+        } else if (card['color'] === 'Y') {
+            return -1
+        } else if (compare['color'] === 'Y') {
+            return 1
+        } else if (card['color'] === 'B') {
+            return -1
+        } else if (compare['color'] === 'B') {
+            return 1
+        } else if (card['color'] === 'G') {
+            return -1
+        } else if (compare['color'] === 'G') {
+            return 1
+        }
+
+
+    }
+
     setUnoable(data) {
         let playerName = data['playerName'];
-
         for (let i = 0; i < this.players.length; i++){
             if (this.players[i]['name'] === playerName) {
                 this.players[i]["unoable"] = true;
@@ -243,7 +320,9 @@ class UnoGame {
         this.deck.deckShuffle();
     }
 
-    startGame() {
+    startGame(stackTwos, winOnWild) {
+        this.stackTwos = stackTwos;
+        this.winOnWild = winOnWild;
         this.gameView = 1
         this.deck.deckShuffle()
         for (let i = 0; i < this.players.length; i++) {

@@ -9,6 +9,7 @@ const playDrawCard = require('./routes/Uno/drawCard')
 const unoColorPicker = require('./routes/Uno/colorPicker')
 const selfCallUno = require('./routes/Uno/selfCallUno')
 const attackUno = require('./routes/Uno/attackUno')
+const sortCards = require('./routes/Uno/sortCards')
 
 
 var cache = require('memory-cache');
@@ -54,10 +55,11 @@ io.on('connection', function(socket) {
             unoColorPicker(socket, io, data);
         } else if (data["data"] === "selfUno"){
             selfCallUno(socket, io, data);
-        }else if (data["data"] === "attackUno"){
+        } else if (data["data"] === "attackUno"){
             attackUno(socket, io, data);
+        } else if (data["data"] === "sortCards"){
+            sortCards(socket, io, data);
         }
-
     })
 
     socket.on('ticTacToe', (data) => {
