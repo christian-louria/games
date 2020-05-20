@@ -10,6 +10,7 @@ const unoColorPicker = require('./routes/Uno/colorPicker')
 const selfCallUno = require('./routes/Uno/selfCallUno')
 const attackUno = require('./routes/Uno/attackUno')
 const sortCards = require('./routes/Uno/sortCards')
+const unoPlayAgain = require('./routes/Uno/playAgain')
 
 
 var cache = require('memory-cache');
@@ -59,6 +60,8 @@ io.on('connection', function(socket) {
             attackUno(socket, io, data);
         } else if (data["data"] === "sortCards"){
             sortCards(socket, io, data);
+        } else if (data["data"] === "playAgain"){
+            unoPlayAgain(socket, io, data);
         }
     })
 

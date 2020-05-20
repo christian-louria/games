@@ -8,7 +8,9 @@ function unoJoin (socket, io, data) {
     let unoGames = initializer.uno["games"];
     if ((gameName in unoGames)) {
         let updatedGame = new UnoGame(unoGames[gameName])
+
         updatedGame.addPlayer(data['playerName'])
+        console.log(updatedGame)
         unoGames[gameName] = updatedGame
 
         newData['game'] = updatedGame;

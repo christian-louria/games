@@ -4,10 +4,17 @@ class UnoPlayer {
         this.hand = []
         this.unoable = false
         this.calledUno = false
+        this.score = 0
     }
 
     addCard(card) {
         this.hand.push(card)
+    }
+
+    resetPlayer() {
+        this.hand = []
+        this.unoable = false
+        this.calledUno = false
     }
 
 }

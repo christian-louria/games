@@ -13,13 +13,11 @@ class UnoGame {
             this.turnNumber = null
             this.stackTwos = null;
             this.winOnWild = null;
+            this.infiniteDraw = null;
 
-            // Your turn!!
-            //
-            //Add win on wild and checks for it  nad stack
-
+            this.someoneIsUnoable = false
             this.youGotUnoed = false
-            this.gotUnoed = []
+            this.gotUnoed = ''
             this.winner = null;
             this.pickingColor = false
             this.forceUnoDraw = 0;
@@ -30,6 +28,7 @@ class UnoGame {
             this.deck = new UnoDeck(0)
             this.topCard = null
         } else {
+            this.infiniteDraw = obj.infiniteDraw;
             this.stackTwos = obj.stackTwos;
             this.winOnWild = obj.winOnWild;
             this.name = obj.name
@@ -38,6 +37,7 @@ class UnoGame {
             this.turn = obj.turn
             this.players = obj.players
 
+            this.someoneIsUnoable = obj.someoneIsUnoable
             this.forceUnoDraw = obj.forceUnoDraw;
             this.youGotUnoed = obj.youGotUnoed
             this.gotUnoed = obj.gotUnoed
@@ -82,24 +82,21 @@ class UnoGame {
         player['hand'] = newHand
     }
 
-
-
     attackUnoCall() {
-        for (let i = 0; i < this.players.length; i++){
-            if (this.players[i]['unoable'] && !this.players[i]['calledUno']) {
-                this.players[i]['unoable'] = false;
-                this.gotUnoed.push(this.players[i]['name'])
+        if (this.winner === null) {
+            for (let i = 0; i < this.players.length; i++) {
+                if (this.players[i]['unoable'] && !this.players[i]['calledUno']) {
+                    this.players[i]['unoable'] = false;
+                    this.gotUnoed = this.players[i]['name']
+                    this.turn = this.gotUnoed
+                    this.youGotUnoed = true
+                    this.forceUnoDraw = 4;
+                    this.someoneIsUnoable = false;
+                    return true
+                }
             }
         }
-
-        if (this.gotUnoed.length > 0) {
-            this.turn = this.gotUnoed[0]
-            this.youGotUnoed = true
-            this.forceUnoDraw = 4;
-            return true
-        }
     }
-
 
     selfUno(data) {
         let playerName = data['playerName'];
@@ -111,17 +108,28 @@ class UnoGame {
             }
         }
         if (player['hand'].length === 1) {
+            this.someoneIsUnoable = false;
             player['calledUno'] = true
         }
 
     }
 
     addPlayer(playerName) {
-        this.players.push(playerName);
+        if (this.gameView !== 0 )
+            return
+        if (!this.players.includes(playerName))
+            this.players.push(playerName);
+    }
+
+    canBeUnoed(player) {
+        this.someoneIsUnoable = true;
+        setTimeout(function(){
+
+            player['unoable'] = true;
+            }, 2000);
     }
 
     drawCard(data) {
-
         let playerName = data['playerName'];
 
         let playerHand;
@@ -133,9 +141,22 @@ class UnoGame {
             }
         }
 
+        if (!this.infiniteDraw && this.forceDraw === 0) {
+            for (let i = 0; i < playerHand.length; i++) {
+                if (playerHand[i]['color'] === this.topCard['color'] ||
+                    playerHand[i]['number'] === this.topCard['number'] ||
+                    playerHand[i]['color'] === "W"
+                ) {
+                    return;
+                }
+            }
+        }
+
         if (player['hand'].length === 1) {
             player['unoable'] = false
             player['calledUno'] = false
+            this.someoneIsUnoable = false;
+
         }
 
         if (this.forceUnoDraw !== 0) {
@@ -157,7 +178,7 @@ class UnoGame {
         if (this.forceUnoDraw === 0) {
             this.youGotUnoed = false;
             this.turn = this.players[this.turnNumber]['name'];
-            this.gotUnoed.splice(0, 1);
+            this.gotUnoed = '';
         }
     }
 
@@ -169,7 +190,7 @@ class UnoGame {
             if (card['number'] === compare['number']) {
                 return 0
             }
-            if (isNaN(parseInt(card['number']) && !isNaN(parseInt(compare['number'])))) {
+            if (!isNaN(parseInt(card['number']) && isNaN(parseInt(compare['number'])))) {
                 return 1
             }
             if (card['number'] === "O") {
@@ -209,16 +230,10 @@ class UnoGame {
 
     }
 
-    setUnoable(data) {
-        let playerName = data['playerName'];
-        for (let i = 0; i < this.players.length; i++){
-            if (this.players[i]['name'] === playerName) {
-                this.players[i]["unoable"] = true;
-            }
-        }
-    }
-
     playCard(data) {
+        if (this.pickingColor) {
+            return 0;
+        }
         if (this.youGotUnoed) {
             return 0;
         }
@@ -237,21 +252,31 @@ class UnoGame {
             if (playerHand[i]['cardID'] === cardID) {
                 let cardPlayed = playerHand[i]
                 if (this.forcing) {
-                    return 0;
+                    return false;
+                }
+                if (this.forceDraw !== 0 && this.topCard['number'] === "S") {
+                    return false;
                 }
                 if (this.forceDraw !== 0 && cardPlayed['number'] !== "+") {
-                    return 0;
+                    return false;
+                }
+                if (this.forceDraw !== 0 && !this.stackTwos) {
+                    return false;
                 }
                 if (cardPlayed['number'] === "W") {
+                    if (playerHand.length === 1 && !this.winOnWild) {
+                        return false;
+                    }
                     this.topCard = cardPlayed;
                     this.pickingColor = true;
                     playerHand.splice(i, 1);
 
                     this.checkWin()
                     if (playerHand.length === 1) {
-                        return 2;
+                        this.canBeUnoed(player)
+                        return true;
                     }
-                    return 1;
+                    return true;
                 } else if (cardPlayed['number'] === "S") {
                     this.forceDraw += 4;
                     this.topCard = cardPlayed;
@@ -259,9 +284,10 @@ class UnoGame {
                     playerHand.splice(i, 1);
                     this.checkWin()
                     if (playerHand.length === 1) {
-                        return 2;
+                        this.canBeUnoed(player)
+                        return true;
                     }
-                    return 1;
+                    return true;
                 } else if (cardPlayed['color'] === this.topCard['color'] ||
                     cardPlayed['number'] === this.topCard['number']) {
                     this.topCard = cardPlayed;
@@ -269,20 +295,26 @@ class UnoGame {
 
                     if (cardPlayed['number'] === "R") {
                         this.rotation = this.rotation * -1
+                        this.nextTurn()
                     } else if (cardPlayed['number'] === "O") {
+                        this.nextTurn()
                         this.nextTurn()
                     } else if (cardPlayed['number'] === "+") {
                         this.forceDraw += 2;
+                        this.nextTurn()
+                    } else {
+                        this.nextTurn()
                     }
-                    this.nextTurn()
+
                     this.checkWin()
 
                     if (playerHand.length === 1) {
-                        return 2;
+                        this.canBeUnoed(player)
+                        return true;
                     }
-                    return 1;
+                    return true;
                 } else {
-                    return 0;
+                    return false;
                 }
             }
         }
@@ -293,7 +325,31 @@ class UnoGame {
             if (this.players[i]['hand'].length === 0) {
                 this.turn = null;
                 this.winner = this.players[i]['name'];
+                this.forceDraw = 0;
+
+                this.calcScores()
             }
+        }
+    }
+
+    calcScore(playerNumber) {
+        let playerScore = this.players[playerNumber]['score']
+        let player = this.players[playerNumber];
+        for (let j = 0; j < player['hand'].length; j++){
+            if (!isNaN(player['hand'][j]['number'])) {
+                playerScore += player['hand'][j]['number']
+            } else if (player['hand'][j]['color'] === 'W') {
+                playerScore += 50
+            } else {
+                playerScore += 20
+            }
+        }
+        return playerScore
+    }
+
+    calcScores() {
+        for (let i = 0; i < this.players.length; i++){
+            this.players[i]['score'] = this.calcScore(i)
         }
     }
 
@@ -320,13 +376,43 @@ class UnoGame {
         this.deck.deckShuffle();
     }
 
-    startGame(stackTwos, winOnWild) {
+    startGame(stackTwos, winOnWild, infiniteDraw) {
         this.stackTwos = stackTwos;
         this.winOnWild = winOnWild;
+        this.infiniteDraw = infiniteDraw;
         this.gameView = 1
         this.deck.deckShuffle()
         for (let i = 0; i < this.players.length; i++) {
             this.players[i] = new UnoPlayer(this.players[i]);
+            for (let j = 0; j < 7; j++){
+                this.players[i].addCard(this.deck.draw());
+            }
+        }
+        this.turnNumber = Math.floor(Math.random()*this.players.length)
+        this.turn = this.players[this.turnNumber]['name']
+        this.topCard = this.deck.draw();
+        if (this.topCard['color'] === "W") {
+            this.pickingColor = true;
+        }
+    }
+
+    playAgain() {
+        this.gameView = 1
+        this.someoneIsUnoable = false;
+        this.youGotUnoed = false;
+
+        this.gotUnoed = ''
+        this.winner = null;
+        this.forceUnoDraw = 0;
+        this.forceDraw = 0;
+        this.forcing = false;
+        this.deckNumber = 1
+        this.rotation = 1
+
+        this.deck = new UnoDeck(0)
+        this.deck.deckShuffle()
+        for (let i = 0; i < this.players.length; i++) {
+            this.players[i].resetPlayer();
             for (let j = 0; j < 7; j++){
                 this.players[i].addCard(this.deck.draw());
             }

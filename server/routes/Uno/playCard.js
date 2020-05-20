@@ -8,36 +8,28 @@ function playCard (socket, io, data) {
     let unoGames = initializer.uno["games"];
     let updatedGame = new UnoGame(unoGames[gameName])
 
+    if (updatedGame.playCard(data)) {
+        newData['game'] = updatedGame;
+        unoGames[gameName] = updatedGame
+        initializer.uno["games"] = unoGames;
+        cache.put('initializer', initializer);
 
-    let res = updatedGame.playCard(data)
-
-    if (res === 0) {
+        io.to(gameName).emit('uno', newData);
+    } else{
         socket.emit('unoMoveBack', data);
-    } else if (res === 1) {
-        newData['game'] = updatedGame;
-        unoGames[gameName] = updatedGame
-        initializer.uno["games"] = unoGames;
-        cache.put('initializer', initializer);
-
-        io.to(gameName).emit('uno', newData);
-    } else {
-
-        setTimeout(function(){
-            updatedGame.setUnoable(data);
-            newData['game'] = updatedGame;
-            unoGames[gameName] = updatedGame
-            initializer.uno["games"] = unoGames;
-            cache.put('initializer', initializer);
-            io.to(gameName).emit('uno', newData);
-        }, 1000);
-
-        newData['game'] = updatedGame;
-        unoGames[gameName] = updatedGame
-        initializer.uno["games"] = unoGames;
-        cache.put('initializer', initializer);
-
-        io.to(gameName).emit('uno', newData);
     }
+
+    if (updatedGame['winner'] !== null) {
+        let message = "";
+        for (let i = 0; i < updatedGame['players'].length; i++) {
+            message += updatedGame['players'][i]['name'] + ": " + updatedGame['players'][i]['score'] + "\n"
+        }
+
+        newData['message'] = {"userName" : "Server", "messageContent" : message}
+        io.to(gameName).emit('unoChat', newData);
+    }
+
+
 }
 
 module.exports = playCard
