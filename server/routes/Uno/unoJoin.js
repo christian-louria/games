@@ -10,7 +10,6 @@ function unoJoin (socket, io, data) {
         let updatedGame = new UnoGame(unoGames[gameName])
 
         updatedGame.addPlayer(data['playerName'])
-        console.log(updatedGame)
         unoGames[gameName] = updatedGame
 
         newData['game'] = updatedGame;
